@@ -37,7 +37,8 @@ def _nearest(a, b):
 
 def test_sobol_design_exact():
     d = sg.initial_design(SPACE, G["n0"], sg.SobolGlobalDesign(4, G["seed"]))
-    assert np.array_equal(d[FREE].values, np.array(G["design0"]))
+    # exact up to the last bits of 10**x on the log axes, which differ between the C math libraries of platforms
+    assert np.allclose(d[FREE].values, np.array(G["design0"]), rtol=1e-12, atol=0)
 
 
 def test_refinement_round():
