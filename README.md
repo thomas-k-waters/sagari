@@ -6,6 +6,7 @@
 [![PyPI](https://img.shields.io/pypi/v/sagari.svg)](https://pypi.org/project/sagari/)
 [![Documentation](https://readthedocs.org/projects/sagari/badge/?version=latest)](https://sagari.readthedocs.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23386326.svg)](https://doi.org/10.5281/zenodo.23386326)
 
 Adaptive Gaussian-process sampling for Schwarzschild orbit-superposition modeling, and for any other model
 whose goodness of fit is an expensive, noisy χ².
@@ -116,7 +117,7 @@ Exact repetition from a seed also needs the same library versions and the same n
 
 ## Citing
 
-Please cite Waters & Gültekin (2026) and the software (`CITATION.cff`).
+Please cite Waters & Gültekin (2026) and the software, archived on Zenodo: [10.5281/zenodo.23386326](https://doi.org/10.5281/zenodo.23386326) (all versions; each release also has its own DOI on that page). See `CITATION.cff`.
 
 ## License
 
