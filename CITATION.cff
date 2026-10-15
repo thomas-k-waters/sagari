@@ -1,0 +1,40 @@
+cff-version: 1.2.0
+title: "SAGARI: Schwarzschild Adaptive Gaussian-process Acquisition, Refinement, and Inference"
+message: "If you use this software, please cite the paper below and the software."
+type: software
+authors:
+  - family-names: Waters
+    given-names: Thomas K.
+    affiliation: University of Michigan
+    orcid: "https://orcid.org/0000-0002-5231-7240"
+  - family-names: Gültekin
+    given-names: Kayhan
+    affiliation: University of Michigan
+    orcid: "https://orcid.org/0000-0002-1146-0198"
+version: 1.0.0
+date-released: "2026-10-14"
+url: "https://github.com/thomas-k-waters/sagari"
+license: MIT
+keywords:
+  - astronomy
+  - supermassive black holes
+  - Schwarzschild modeling
+  - Bayesian optimization
+  - Gaussian processes
+abstract: >
+  SAGARI replaces the nested parameter grids of orbit-superposition modeling campaigns with adaptive
+  rounds: a scrambled Sobol initial design, refinement by feasibility-weighted Expected Improvement under a
+  Gaussian-process surrogate with an explicit term for the model-to-model scatter of chi2, a stopping rule on
+  smoothed parameter ranges, error-bar rounds that test the surrogate out of sample, and a posterior sampled
+  on the final surrogate. It needs only the parameters and chi2 of each model.
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Waters
+      given-names: Thomas K.
+    - family-names: Gültekin
+      given-names: Kayhan
+  title: "Schwarzschild Orbit-library Modeling with an Order of Magnitude Fewer Models: Adaptive Gaussian-process Sampling and a Case Study of M 86"
+  journal: "The Astrophysical Journal"
+  year: 2026
+  notes: "submitted"

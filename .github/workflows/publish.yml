@@ -1,0 +1,87 @@
+name: Publish to PyPI
+
+# 1. When a GitHub Release is published -> tests, build, and publish to PyPI (job publish-pypi).
+# 2. Manually (Actions tab -> "Publish to PyPI" -> "Run workflow") -> a dry run to TestPyPI.
+#
+# Both use PyPI's Trusted Publisher (OIDC); no token is stored in the repository. One-time setup on
+# pypi.org/manage/account/publishing/ and test.pypi.org/manage/account/publishing/: add a pending trusted
+# publisher for owner=thomas-k-waters, repository=sagari, workflow=publish.yml, environment=pypi (testpypi).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      OMP_NUM_THREADS: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - run: pytest -q
+
+  build:
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip build twine
+      - run: python -m build
+      - run: twine check dist/*
+      # PyPI versions can never be reused, so refuse a release whose tag does not match the package version
+      - name: Check release tag matches package version
+        if: github.event_name == 'release'
+        run: |
+          PKG_VERSION=$(grep -oP '(?<=__version__ = ")[^"]+' src/sagari/_version.py)
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Release tag 'v$TAG_VERSION' does not match sagari._version ('$PKG_VERSION')."
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v5
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  publish-testpypi:
+    if: github.event_name == 'workflow_dispatch'
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/sagari
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: python-package-distributions
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  publish-pypi:
+    if: github.event_name == 'release'
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/sagari
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: python-package-distributions
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

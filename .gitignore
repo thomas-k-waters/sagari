@@ -1,0 +1,37 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Packaging
+*.egg-info/
+build/
+dist/
+docs/_build/
+docs/generated/
+
+# Campaign output written by the examples and benchmarks
+examples/*_campaign/
+examples/notebooks/*_campaign/
+examples/notebooks/cluster_campaign/
+benchmarks/results/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Editors / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Virtual environments
+.venv/
+venv/
+
+# Local tool state
+.claude/
+
+# Sphinx copies the example notebooks here at build time
+docs/notebooks/
+.coverage

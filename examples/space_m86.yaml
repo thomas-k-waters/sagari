@@ -1,0 +1,10 @@
+# The search space of the M 86 campaign of Waters & Gultekin (2026), extinction-corrected bounds.
+# Free parameters have bounds (and optionally scale: log); fixed ones have a value.
+name: M86
+parameters:
+  upsilon:     {bounds: [3.65, 10.94]}                 # stellar V-band M/L [Msun/Lsun]
+  mbh:         {bounds: [3.0e+7, 5.0e+9], scale: log}   # black hole mass [Msun]
+  v_c:         {bounds: [0.0, 800.0]}                   # halo asymptotic circular velocity [km/s]
+  r_c:         {bounds: [0.1, 30.0], scale: log}        # halo core radius [kpc]
+  inclination: {value: 89.0}                            # [deg]
+  xi:          {value: 1.0}                             # nuclear-to-bulge M/L (no separate nucleus)

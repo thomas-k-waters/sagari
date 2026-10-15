@@ -1,0 +1,88 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sagari"
+dynamic = ["version"]
+description = "SAGARI: Schwarzschild Adaptive Gaussian-process Acquisition, Refinement, and Inference -- adaptive sampling for orbit-superposition modeling and other expensive, noisy chi2 surfaces"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Thomas K. Waters", email = "waterstk@umich.edu" },
+]
+keywords = ["astronomy", "black holes", "Schwarzschild modeling", "orbit superposition", "Bayesian optimization",
+            "Gaussian process", "expected improvement", "Sobol sequence"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "pandas>=2.0",
+    "scikit-learn>=1.3",
+    "emcee>=3.1",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+plot = [
+    "matplotlib>=3.7",
+    "corner>=2.2",
+]
+docs = [
+    "sphinx>=7.0",
+    "sphinx-rtd-theme>=2.0",
+    "myst-nb>=1.0",
+    "sphinx-copybutton>=0.5",
+    "matplotlib>=3.7",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.4",
+    "build>=1.0",
+    "twine>=5.0",
+]
+
+[project.scripts]
+sagari = "sagari.cli:main"
+
+[project.urls]
+"Homepage" = "https://github.com/thomas-k-waters/sagari"
+"Bug Tracker" = "https://github.com/thomas-k-waters/sagari/issues"
+"Documentation" = "https://sagari.readthedocs.io"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = { attr = "sagari._version.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--tb=short"
+markers = [
+    "slow: end-to-end campaigns and posterior sampling (a minute or more); run the full suite before a release",
+    "parity: compares with the original campaign code of the paper; skipped unless SAGARI_REFERENCE is set",
+]
+
+[tool.ruff]
+line-length = 120
+src = ["src"]
+extend-exclude = ["examples/notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+# E501: long lines are mostly docstrings and formulas kept on one line for readability
+# E702: paired assignments on one line in the numerics, as in the original campaign code
+ignore = ["E501", "E702"]
