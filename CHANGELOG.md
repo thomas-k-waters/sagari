@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 (2026-10-14)
+## 1.0.0 (2026-10-15)
 
 First public release of SAGARI (Schwarzschild Adaptive Gaussian-process Acquisition, Refinement, and
 Inference), accompanying Waters & Gültekin (2026).
