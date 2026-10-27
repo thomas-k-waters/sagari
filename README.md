@@ -81,7 +81,7 @@ Failed models are written as `chi2 = nan` and kept: the search learns to avoid w
 1. **Initial design**: a scrambled Sobol sequence over the box, continued by every later round.
 2. **Search rounds**: a Gaussian process with a Matérn 5/2 kernel and an explicit nugget for the model-to-model
    scatter of χ², fitted near the minimum. A second GP fitted to every model keeps the search out of regions that
-   are hopeless or where models fail. Each round places 65% of its models by feasibility-weighted Expected
+   are infeasible or where models fail. Each round places 65% of its models by feasibility-weighted Expected
    Improvement, with a denoised incumbent, two-scale candidates and a minimum separation, and verifies isolated
    low models by their neighbours. The other 35% continues the Sobol sequence.
 3. **Stopping rule**: smoothed 16–84% ranges of the parameters you care about. The search stops when they move

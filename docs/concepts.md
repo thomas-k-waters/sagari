@@ -35,7 +35,7 @@ of magnitude of χ² overshoots badly.
 evaluated model, not the lowest raw χ²: one downward-scattered model would otherwise set a target nothing can
 beat. EI is multiplied by the probability that a candidate lies inside the training window. That probability
 comes from a second GP fitted to $\log_{10}(\chi^2-\chi^2_{\min}+20)$ of *all* models, failures included, which
-keeps the search out of regions known to be hopeless or to fail. Candidates come from a uniform pool plus
+keeps the search out of regions known to be infeasible or to fail. Candidates come from a uniform pool plus
 perturbations at three scales around the best models. The batch is chosen greedily with a minimum separation,
 isolated low models are verified by their neighbours, and 35% of every round continues the Sobol sequence.
 
@@ -71,4 +71,4 @@ available. See [Analysis](analysis.md).
 
 On a benchmark with a narrow, deeper minimum beside a broad one and the scatter of a real campaign, the full
 method finds the deeper minimum in 91 of 100 trials. The same search without these components finds it in 50,
-and Sobol sampling alone in none ([notebook 4](notebooks/04_benchmark_and_replay.ipynb)).
+and Sobol sampling alone in 0 ([notebook 4](notebooks/04_benchmark_and_replay.ipynb)).
