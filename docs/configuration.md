@@ -54,6 +54,8 @@ campaigns (Section 4 of the paper). Change them only for a reason.
 | `errorbars.max_rounds` | 3 | most error-bar rounds |
 | `errorbars.auto_window` | false | choose the training window from the scatter near the floor (unstable on some surfaces) |
 
+The fixed constants below these settings, and the reason for each, are listed in [Fixed constants](constants.md).
+
 Any other keyword of {py:func}`sagari.propose_round` can be added under `sampler` (for example
 `noise_diagnostic: false`, as in the paper's replays).
 
