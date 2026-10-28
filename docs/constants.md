@@ -50,10 +50,15 @@ the unit cube, and σ_χ² is the model-to-model scatter fitted by the surrogate
 | sampler | 32 walkers, 25000 steps, first 5000 discarded, every 5th kept | `posterior.run_emcee` | the settings of the paper. Check the chains of a new problem as for any MCMC |
 | surrogate-marginalized posterior | 2000 joint draws of the latent error at 3000 posterior samples | `posterior.surface_draws` | enough draws for the quantiles to be stable; the subsample keeps the covariance matrix tractable. Check the effective sample size of the reweighted draws (`posterior.reweight`) |
 
-## The training cap during a long search
+## The training cap of the monitoring surrogate
 
-The monitoring surrogate of the search is fitted to at most `estimate.n_train_cap` = 300 models. Once a search has
-placed several hundred models in one basin, the 300 lowest span only a narrow range of χ², the surrogate loses
-the walls of the basin, and its minimum can drift (paper, Section 4.1). The default stopping rule ends a search
-before this matters in typical campaigns. If you run a search much longer than ~600 models, raise
-`estimate.n_train_cap` (for example to 1000, the cap of the error-bar rounds).
+The monitoring surrogate of the search, which decides when the search stops, is fitted to at most
+`estimate.n_train_cap` models. The paper (and version 1.0.0) used 300. Once a search has placed several hundred
+models in one basin, the 300 lowest span only a narrow range of χ², the surrogate loses the walls of the basin,
+and its minimum can drift (paper, Section 4.1). On the paper's two-basin benchmark, the estimate fitted with a cap
+of 1000 was better at every budget from 384 models on, and for M86 the two caps gave the same stopping decisions.
+The cost is negligible next to that of the models (a few seconds more per round), so since version 1.0.1 the
+default is 1000. To reproduce the paper's campaigns exactly, set `estimate: {n_train_cap: 300}`.
+
+The GP that chooses the refinement models by Expected Improvement keeps its cap of 300
+(`propose_round(n_train_cap=300)`), the value used and validated in the paper.

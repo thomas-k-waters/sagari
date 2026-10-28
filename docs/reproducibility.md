@@ -29,8 +29,8 @@ and the options that reproduce its benchmark variants are kept. This is checked 
   `SAGARI_REFERENCE_ANALYSIS` for the analysis functions).
 - `tests/test_golden.py` checks the same outputs against a fixture written by the original code, so it runs
   anywhere. Refinement rounds are compared point for point with a small tolerance for platform round-off.
-- `Campaign.run` with `replay.archive_evaluator` reproduces the paper's NGC 5102 and NGC 3258 replays model for
-  model, and `benchmarks/two_basin.py` reproduces its 100-trial benchmark exactly (with one thread).
+- `Campaign.run` with `replay.archive_evaluator` and `estimate={"n_train_cap": 300}` (the paper's value; the
+  default is 1000 since version 1.0.1) reproduces the paper's NGC 5102 and NGC 3258 replays model for model, and `benchmarks/two_basin.py` reproduces its 100-trial benchmark exactly (with one thread).
 
 ## Deliberate differences from the paper's driver
 
@@ -40,3 +40,5 @@ and the options that reproduce its benchmark variants are kept. This is checked 
   archive can, and a GP reads exact repeats as noiseless.
 - `posterior.surface_draws` raises the covariance jitter if the factorization fails. With the paper's data it
   never does, and the first attempt uses the paper's value.
+- Since version 1.0.1, a campaign's monitoring surrogate is fitted to at most 1000 models instead of the paper's
+  300 (`estimate.n_train_cap`; see [Fixed constants](constants.md)). Set it to 300 to reproduce the paper.

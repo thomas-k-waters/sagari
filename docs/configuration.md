@@ -29,7 +29,8 @@ The same structure can be passed as a Python dict to `ParameterSpace.from_dict`.
 Pass settings to `Campaign.create(..., **settings)`, or to `sagari init --settings settings.yaml` (with
 `--seed`, `--n-initial`, `--n-round`, `--converge-on` as shortcuts). They are stored in `campaign.yaml` and can be
 edited there between rounds. **The defaults are the adopted settings of the paper**, validated on two real
-campaigns (Section 4 of the paper). Change them only for a reason.
+campaigns (Section 4 of the paper), with one exception: since version 1.0.1, `estimate.n_train_cap` is 1000
+instead of the paper's 300 (see [Fixed constants](constants.md)). Change them only for a reason.
 
 | setting | default | meaning |
 | --- | --- | --- |
@@ -44,7 +45,7 @@ campaigns (Section 4 of the paper). Change them only for a reason.
 | `sampler.kernel` | matern52 | GP kernel (`rbf` is available, but fails on rough surfaces) |
 | `sampler.train_window` | 30 | fit the main GP to models within this × σ_χ² of the minimum |
 | `sampler.global_fraction` | 0.35 | share of each search round that continues the Sobol sequence |
-| `estimate.n_train_cap` | 300 | most models the monitoring surrogate is fitted to |
+| `estimate.n_train_cap` | 1000 | most models the monitoring surrogate is fitted to (300 in the paper and v1.0.0) |
 | `errorbars.n_round` | 128 | models per error-bar round |
 | `errorbars.n_profile` | 7 | points on each parameter's profile per round (the rest fill the region) |
 | `errorbars.n_train_cap` | 1000 | most models the inference surrogate is fitted to: raise it until the window decides |

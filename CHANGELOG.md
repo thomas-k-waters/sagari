@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- The default `estimate.n_train_cap` of a `Campaign` (the most models the monitoring surrogate of the search is
+  fitted to) is now 1000 instead of the paper's 300. With 300, a search that packs several hundred models into one
+  basin fits the surrogate to a narrow range of chi2, loses the walls of the basin, and its minimum drifts; on the
+  paper's two-basin benchmark the cap of 1000 was better at every budget from 384 models on, and for M86 it gave
+  the same stopping decisions. Set `estimate: {n_train_cap: 300}` to reproduce the paper. The function
+  `smoothed_estimate` and the EI sampler `propose_round` keep their defaults of 300.
+- Documentation: a page of the fixed constants and the reason for each (`docs/constants.md`).
+
 ## 1.0.0 (2026-10-15)
 
 First public release of SAGARI (Schwarzschild Adaptive Gaussian-process Acquisition, Refinement, and
