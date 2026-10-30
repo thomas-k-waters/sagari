@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- `benchmarks/two_basin.py` now runs all seven methods of the paper's benchmark (Table 1): `full`, `lhc` (the
+  full method with Latin-hypercube space filling), `no_noise` (the full method without a noise term in the chi2
+  surrogates), `ablated` (the basic search), `sobol`, `lhc_only`, and `nested_grid`. The library is unchanged.
+- `benchmarks/two_basin.py` now scores each trial with the smoothed estimate at a training cap of 1000, as the
+  paper does. It previously used the estimate's default of 300, which the paper reports only as a pitfall.
+- The script's docstring and the documentation refer to the sections of the revised paper.
+
+## 1.0.1 (2026-10-28)
+
 - The default `estimate.n_train_cap` of a `Campaign` (the most models the monitoring surrogate of the search is
   fitted to) is now 1000 instead of the paper's 300. With 300, a search that packs several hundred models into one
   basin fits the surrogate to a narrow range of chi2, loses the walls of the basin, and its minimum drifts; on the

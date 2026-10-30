@@ -30,7 +30,7 @@ and the options that reproduce its benchmark variants are kept. This is checked 
 - `tests/test_golden.py` checks the same outputs against a fixture written by the original code, so it runs
   anywhere. Refinement rounds are compared point for point with a small tolerance for platform round-off.
 - `Campaign.run` with `replay.archive_evaluator` and `estimate={"n_train_cap": 300}` (the paper's value; the
-  default is 1000 since version 1.0.1) reproduces the paper's NGC 5102 and NGC 3258 replays model for model, and `benchmarks/two_basin.py` reproduces its 100-trial benchmark exactly (with one thread).
+  default is 1000 since version 1.0.1) reproduces the paper's NGC 5102 and NGC 3258 replays model for model, and `benchmarks/two_basin.py` reproduces every method of its benchmark (Table 1) trial for trial (with one thread).
 
 ## Deliberate differences from the paper's driver
 

@@ -17,4 +17,4 @@ Run them with `pip install "sagari[plot]" jupyter`. They write their campaigns n
 - `sco_runalls.py`: the adapter between a campaign directory and the Fortran orbit-superposition pipeline of the
   paper. It writes a `runallt` commands file for a round and collects the `cres.*` files into a results table.
 - `space_m86.yaml`, `settings_paper.yaml`: the search space and settings of the paper's M 86 campaign.
-- `../benchmarks/two_basin.py`: the paper's two-basin benchmark (100 trials per sampler).
+- `../benchmarks/two_basin.py`: the paper's two-basin benchmark, with all seven methods of its Table 1.
