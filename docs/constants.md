@@ -14,6 +14,7 @@ the unit cube, and σ_χ² is the model-to-model scatter fitted by the surrogate
 | feasibility offset c | 20 | `gp.feasibility_gp` | keeps log₁₀(χ² − χ²_min + c) finite at the minimum and flat within the scatter there, so the feasibility GP describes the walls and not the noise at the floor |
 | feasibility threshold t | 10 × the median Δχ² predicted over the box | `gp.feasibility_gp` (`feasible_factor`) | marks as unpromising only the regions far worse than a typical point of the box. The median is taken over the box, not the models, so the threshold does not shrink as a campaign concentrates near the minimum |
 | feasibility training set | all models up to 2000, then the 300 lowest plus a random sample | `gp.feasibility_gp` (`max_train`) | keeps the fit cheap while keeping the region near the minimum and an even sample of the rest |
+| prior level of the monitoring and inference surrogates | χ²_min + t, capped at the lowest training χ² + 10 × the training range | `gp.PessimisticGP` (`level_cap`; settings `estimate.level_cap`, `errorbars.level_cap`) | far from every model the surface is assumed bad, not average. The cap keeps the level within reach of the training models. Since version 1.1.0; see below |
 
 ## Choosing the models of a search round
 
@@ -62,3 +63,24 @@ default is 1000. To reproduce the paper's campaigns exactly, set `estimate: {n_t
 
 The GP that chooses the refinement models by Expected Improvement keeps its cap of 300
 (`propose_round(n_train_cap=300)`), the value used and validated in the paper.
+
+## The prior level of the monitoring and inference surrogates
+
+The surrogates of `smoothed_estimate` and `inference_gp` (`gp.PessimisticGP`) assume that the surface far from every
+model is bad. Their prior mean is χ²_min + t, the feasibility threshold, instead of the mean of the training
+models. Those models lie within the training window of the minimum, but t can be far larger: in an NGC 4751
+campaign the training χ² spanned 911–1210 and the level was 40540. The GP then fits a broad bump to bridge the
+gap, with length scales longer than the box. The mean never returns to the level inside the box, the valley
+becomes a 1% ripple on the bump, and errors in the bump's shape appear as dips 130–330 below the minimum, 0.35 from
+any model. They took most of the monitoring weight and drove the profiles to the box edges.
+
+Since version 1.1.0 the level is capped at the lowest training χ² + 10 × the training range. For the NGC 4751 models
+the length scales are then 0.5–0.7, there are no dips, and the Δχ² ≤ 4 range of M_BH is 1.92–2.25 × 10⁹ instead of
+running to the box edge. The value 10 is a compromise:
+- With caps of about 20 and up, the NGC 4751 dips return.
+- With caps below about 10, surrogates fitted to small training sets (20 models of a two-parameter test problem)
+  fit too small a scatter more often, and their error-bar predictions become overconfident.
+- For M86 v5 the profile ranges change by less than 2%.
+
+To reproduce the paper, set `estimate: {level_cap: null}` and `errorbars: {level_cap: null}` in a campaign, or pass
+`level_cap=None` to `smoothed_estimate`, `inference_gp`, `errorbar_round` or `PessimisticGP`.

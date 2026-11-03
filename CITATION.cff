@@ -11,9 +11,9 @@ authors:
     given-names: Kayhan
     affiliation: University of Michigan
     orcid: "https://orcid.org/0000-0002-1146-0198"
-version: 1.0.0
+version: 1.1.0
 doi: "10.5281/zenodo.23386326"
-date-released: "2026-10-15"
+date-released: "2026-11-03"
 url: "https://github.com/thomas-k-waters/sagari"
 license: MIT
 keywords:

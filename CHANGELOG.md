@@ -1,6 +1,35 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 (2026-11-03)
+
+- **Fix: the monitoring and inference surrogates could dip far below the minimum away from every model.**
+  `PessimisticGP`, the surrogate of `smoothed_estimate` (the stopping rule) and of `inference_gp` (profiles,
+  error-bar rounds, posterior), uses the feasibility threshold as its prior mean, and that threshold can lie far
+  above every training model. The GP then fits a broad bump to bridge the gap, with length scales longer than the
+  box. The mean never returns to the prior level inside the box, the valley becomes a small ripple on the bump,
+  and small errors in the bump's shape show up as deep dips far from any model. In an NGC 4751 campaign (training
+  chi2 911–1210, prior level 40540) the dips lay 130–330 below the minimum at 0.35 from the nearest model. They
+  took most of the monitoring weight, so the stopping rule saw ranges of M_BH 1.3–2.3e9 and v_c 27–452 km/s, and
+  the Δχ² ≤ 4 profiles ran to the box edges. The prior level is now capped at the lowest training chi2 plus
+  10 × the training range (`PessimisticGP(level_cap=10.0)`). The same models then give length scales of 0.5–0.7, no
+  dips, and M_BH 1.92–2.25e9 at Δχ² ≤ 4. The dips return from a cap of about 20 up. Below about 10, small training
+  sets (20 models) fit too small a scatter more often.
+- `level_cap` is a keyword argument of `PessimisticGP`, `smoothed_estimate`, `inference_gp` and `errorbar_round`,
+  and a campaign setting (`estimate.level_cap`, `errorbars.level_cap`, both 10). `null` / `None` restores the
+  behavior of the paper and earlier versions. Existing campaigns pick up the cap when they are next loaded, and
+  their estimate history is recomputed with it.
+- Effect on the paper's problems:
+  - M86 v5: the Δχ² ≤ 4 and ≤ 10 profile ranges change by less than 2%.
+  - The two-basin benchmark: the cap never binds. The feasibility threshold stays below 10 × the training
+    range in all 96 estimates of 16 trials of the full method (8 plain, 8 with the failure region; 6 rounds
+    each), so Table 1 is unchanged.
+  - Golden and parity tests pass. The parity reference (the original campaign code) has the same cap.
+- `test_errorbar_round_predicts_its_models` now checks the out-of-sample calibration over four seeded campaigns
+  instead of one. Each surrogate there is fitted to 20 models, whose scatter is only loosely identified, so a
+  single campaign can come out at z rms 2–3 with or without the cap.
+- Documentation: the prior level and its cap in `docs/constants.md`.
+
+## 1.0.2 (2026-10-30)
 
 - `benchmarks/two_basin.py` now runs all seven methods of the paper's benchmark (Table 1): `full`, `lhc` (the
   full method with Latin-hypercube space filling), `no_noise` (the full method without a noise term in the chi2

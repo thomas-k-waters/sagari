@@ -24,14 +24,15 @@ from .space import as_space
 def smoothed_estimate(table: pd.DataFrame, space, seed: int = 0, n_train_cap: int = 300,
                       feasible_factor: float = 10.0, n_uniform: int = 60000, temperature: float | None = None,
                       quantiles: tuple = (0.16, 0.84), train_window: float | None = 30.0, kernel: str = "matern52",
-                      feasibility: bool = False) -> dict | None:
+                      feasibility: bool = False, level_cap: float | None = 10.0) -> dict | None:
     """The monitoring estimate after a round.
 
     Returns ``{param: [best, lo, hi], "chi2_min", "temperature", "ess"}`` in physical units (best: the
     surrogate minimum; lo, hi: weighted quantiles), or None with fewer than 2 x dim + 2 finite models.
     Use the ``kernel`` and ``train_window`` of the campaign's sampler. ``feasibility=True`` also multiplies
     the weights by the probability, from the feasibility GP, of lying inside the training window (off in the
-    paper).
+    paper). ``level_cap``: the cap on the surrogate's prior level (:class:`sagari.gp.PessimisticGP`; None in
+    the paper).
     """
     space = as_space(space)
     finite = table[np.isfinite(table["chi2"])]
@@ -47,7 +48,7 @@ def smoothed_estimate(table: pd.DataFrame, space, seed: int = 0, n_train_cap: in
     keep, win_scatter = training_window(X, best["chi2"].values, dim, seed, train_window, kernel)
     X, best = X[keep], best[keep]
     limit = float(best["chi2"].max() - best["chi2"].min()) if win_scatter is not None else thr
-    gp = PessimisticGP(X, best["chi2"].values, chi2_min + thr, dim, seed, kernel)
+    gp = PessimisticGP(X, best["chi2"].values, chi2_min + thr, dim, seed, kernel, level_cap=level_cap)
     T = max(1.0, float(np.sqrt(gp.kernel_.k2.noise_level) * gp.scale)) if temperature is None else temperature
 
     rng = np.random.default_rng([seed, 4242, len(finite)])

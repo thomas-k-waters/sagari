@@ -25,10 +25,11 @@ WINDOW_FRACTIONS = (1.0, 2 / 3, 0.4, 0.27, 0.17)     # auto-window candidates, a
 # ---------------------------------------------------------------- the inference surrogate
 def inference_gp(table: pd.DataFrame, space, seed: int = DEFAULT_SEED, kernel: str = "matern52",
                  train_window: float | None = 30.0, n_train_cap: int = 1000, feasible_factor: float = 10.0,
-                 auto_window: bool = False):
+                 auto_window: bool = False, level_cap: float | None = 10.0):
     """The surrogate of the error-bar rounds and of the final inference: the monitoring GP (pessimistic prior
-    at the feasibility threshold, nugget for the scatter) fitted to the models below the threshold and inside
-    the training window, at most ``n_train_cap`` of them (raise the cap so that the window decides).
+    at the feasibility threshold, capped by ``level_cap`` as in :class:`sagari.gp.PessimisticGP`, None in the
+    paper; nugget for the scatter) fitted to the models below the threshold and inside the training window, at
+    most ``n_train_cap`` of them (raise the cap so that the window decides).
 
     ``auto_window=True`` instead takes the widest window whose fitted scatter matches the leave-one-out rms
     of the models near the floor (:func:`window_check`); the returned GP then carries ``.window`` and
@@ -46,14 +47,15 @@ def inference_gp(table: pd.DataFrame, space, seed: int = DEFAULT_SEED, kernel: s
     if len(usable) < 2 * dim + 2:
         usable = finite
     if auto_window and train_window:
-        gp = _auto_window_gp(usable, space, seed, kernel, train_window, n_train_cap, chi2_min + thr)
+        gp = _auto_window_gp(usable, space, seed, kernel, train_window, n_train_cap, chi2_min + thr,
+                             level_cap=level_cap)
         if gp is not None:
             return gp, chi2_min, thr
     best = usable.nsmallest(min(n_train_cap, len(usable)), "chi2")
     X = space.to_unit(best)
     keep, _ = training_window(X, best["chi2"].values, dim, seed, train_window, kernel)
     X, best = X[keep], best[keep]
-    return PessimisticGP(X, best["chi2"].values, chi2_min + thr, dim, seed, kernel), chi2_min, thr
+    return PessimisticGP(X, best["chi2"].values, chi2_min + thr, dim, seed, kernel, level_cap=level_cap), chi2_min, thr
 
 
 def window_check(gp: PessimisticGP, n_floor: int = 150) -> dict:
@@ -71,7 +73,8 @@ def window_check(gp: PessimisticGP, n_floor: int = 150) -> dict:
     return dict(noise=noise, loo_rms_floor=rms, ratio=noise / rms, n_train=len(m))
 
 
-def _auto_window_gp(usable, space, seed, kernel, train_window, n_train_cap, level, n_low=300, tol=1.1, n_pass=3):
+def _auto_window_gp(usable, space, seed, kernel, train_window, n_train_cap, level, n_low=300, tol=1.1, n_pass=3,
+                    level_cap=10.0):
     """The widest training window whose GP passes :func:`window_check` (1/tol <= ratio <= tol). Candidates
     are ``train_window`` x the scatter, then :data:`WINDOW_FRACTIONS` of it; if none passes, the next pass
     measures them in the smallest leave-one-out rms near the floor found so far (at most ``n_pass`` passes).
@@ -93,7 +96,7 @@ def _auto_window_gp(usable, space, seed, kernel, train_window, n_train_cap, leve
             if len(pool) > n_train_cap:
                 lo = pool.nsmallest(n_low, "chi2")
                 pool = pd.concat([lo, pool.drop(lo.index).sample(n_train_cap - n_low, random_state=seed)])
-            gp = PessimisticGP(space.to_unit(pool), pool["chi2"].values, level, dim, seed, kernel)
+            gp = PessimisticGP(space.to_unit(pool), pool["chi2"].values, level, dim, seed, kernel, level_cap=level_cap)
             gp.window = dict(window_dchi2=round(float(w), 1), window_sigma=round(f * train_window, 1),
                              unit=round(unit, 2), pass_=k + 1, **window_check(gp))
             fits.append(gp)
@@ -215,7 +218,8 @@ def profile_verdict(before: dict | None, after: dict, params, sd_tol: float = 3.
 def errorbar_round(table: pd.DataFrame, space, n_new: int, seed: int = DEFAULT_SEED, *, kernel: str = "matern52",
                    train_window: float | None = 30.0, dchi2: float | None = None, n_candidates: int = 2 ** 15,
                    n_train_cap: int = 1000, n_profile: int = 7, profile_dchi2: float | None = None,
-                   profile_levels: tuple = (4.0, 10.0), auto_window: bool = False, round_index: int = 0) -> pd.DataFrame:
+                   profile_levels: tuple = (4.0, 10.0), auto_window: bool = False, round_index: int = 0,
+                   level_cap: float | None = 10.0) -> pd.DataFrame:
     """One error-bar round of ``n_new`` models: ``n_profile`` x dim on the profile paths, the rest filling the
     region within ``dchi2`` (default 10 + 2 sigma_chi2) of the surrogate minimum.
 
@@ -227,11 +231,12 @@ def errorbar_round(table: pd.DataFrame, space, n_new: int, seed: int = DEFAULT_S
     Every model carries the surrogate's prediction (``pred_mu``; ``pred_sd``, the predictive sd including the
     scatter; ``pred_latent``, without it) for :func:`out_of_sample`. ``.attrs["profile_before"]`` holds the
     profiles before the round, for :func:`profile_verdict`. Pass the number of earlier error-bar rounds as
-    ``round_index`` (used only for bookkeeping).
+    ``round_index`` (used only for bookkeeping). ``level_cap`` as in :func:`inference_gp`.
     """
     space = as_space(space)
     dim = space.dim
-    fit = inference_gp(table, space, seed, kernel, train_window, n_train_cap, auto_window=auto_window)
+    fit = inference_gp(table, space, seed, kernel, train_window, n_train_cap, auto_window=auto_window,
+                       level_cap=level_cap)
     if fit is None:
         raise ValueError("too few finite models to fit the surrogate")
     gp = fit[0]

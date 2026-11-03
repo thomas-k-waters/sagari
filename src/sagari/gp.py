@@ -54,9 +54,19 @@ class PessimisticGP:
 
     The monitoring and inference surrogate of the paper. ``predict`` returns chi2 units; ``gp`` is the
     underlying scikit-learn regressor (fitted to ``(y - level) / scale``).
+
+    The level is capped at min(y) + ``level_cap`` x the range of y (``level_cap=None``: the uncapped level of
+    the paper and of versions before 1.1.0). A level far above every training model must be bridged by a
+    broad bump: the fitted length scales then exceed the box, the mean never returns to the level inside it,
+    and the minimum is a small ripple on the bump, so errors in the bump's shape appear as dips below the
+    minimum far from every model. See ``docs/constants.md``.
     """
 
-    def __init__(self, X, y, level: float, dim: int, seed: int, kernel: str = "matern52"):
+    def __init__(self, X, y, level: float, dim: int, seed: int, kernel: str = "matern52",
+                 level_cap: float | None = 10.0):
+        y = np.asarray(y, float)
+        if level_cap is not None:
+            level = min(float(level), float(y.min()) + level_cap * max(float(np.ptp(y)), 1.0))
         self.level, self.scale = float(level), max(float(np.std(y)), 1e-9)
         self.gp = GaussianProcessRegressor(kernel=make_kernel(dim, kernel), normalize_y=False, n_restarts_optimizer=1,
                                            random_state=seed)

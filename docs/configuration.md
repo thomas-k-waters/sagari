@@ -29,8 +29,12 @@ The same structure can be passed as a Python dict to `ParameterSpace.from_dict`.
 Pass settings to `Campaign.create(..., **settings)`, or to `sagari init --settings settings.yaml` (with
 `--seed`, `--n-initial`, `--n-round`, `--converge-on` as shortcuts). They are stored in `campaign.yaml` and can be
 edited there between rounds. **The defaults are the adopted settings of the paper**, validated on two real
-campaigns (Section 4 of the paper), with one exception: since version 1.0.1, `estimate.n_train_cap` is 1000
-instead of the paper's 300 (see [Fixed constants](constants.md)). Change them only for a reason.
+campaigns (Section 4 of the paper), with two exceptions (see [Fixed constants](constants.md)):
+- Since version 1.0.1, `estimate.n_train_cap` is 1000 instead of the paper's 300.
+- Since version 1.1.0, the surrogates' prior level is capped (`estimate.level_cap` and `errorbars.level_cap`
+  10; the paper had no cap, `null`).
+
+Change them only for a reason.
 
 | setting | default | meaning |
 | --- | --- | --- |
@@ -46,9 +50,11 @@ instead of the paper's 300 (see [Fixed constants](constants.md)). Change them on
 | `sampler.train_window` | 30 | fit the main GP to models within this × σ_χ² of the minimum |
 | `sampler.global_fraction` | 0.35 | share of each search round that continues the Sobol sequence |
 | `estimate.n_train_cap` | 1000 | most models the monitoring surrogate is fitted to (300 in the paper and v1.0.0) |
+| `estimate.level_cap` | 10 | cap on the monitoring surrogate's prior level, in units of the training range (`null` in the paper and before v1.1.0) |
 | `errorbars.n_round` | 128 | models per error-bar round |
 | `errorbars.n_profile` | 7 | points on each parameter's profile per round (the rest fill the region) |
 | `errorbars.n_train_cap` | 1000 | most models the inference surrogate is fitted to: raise it until the window decides |
+| `errorbars.level_cap` | 10 | the same cap for the inference surrogate (`null` in the paper and before v1.1.0) |
 | `errorbars.sd_tol` | 3 | error bars are done when the latent sd at every interval end is at most this |
 | `errorbars.frac` | 0.2 | … and the ends moved by less than this × the width during the round |
 | `errorbars.levels` | [4, 10] | the Δχ² levels whose ends are checked |
