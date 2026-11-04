@@ -128,6 +128,40 @@ def feasibility_gp(table: pd.DataFrame, space: ParameterSpace, seed: int, feasib
     return gpf, chi2_min, feasible_factor * max(box_median, 1e-9)
 
 
+def fit_clipped(X, train: pd.DataFrame, usable: pd.DataFrame, space: ParameterSpace, level: float, seed: int,
+                kernel: str = "matern52", clip: bool = True, level_cap: float | None = 10.0,
+                n_iter: int = 3) -> PessimisticGP:
+    """A :class:`PessimisticGP` on the training models (``X``, the rows of ``train``). With ``clip=True``, the
+    other ``usable`` models (above the training window, or beyond the training cap) that the GP predicts below
+    the training set's top are added at that top, the ceiling, and the GP refitted (up to ``n_iter`` times).
+
+    Dropped, the models outside the window cannot stop the GP from extending the valley into a gap they
+    surround: an NGC 4751 campaign put chi2_min + 3 between three models measured at chi2_min + 1068-1205.
+    Only the models the fit contradicts are added, since all of them, clipped, make the GP fit a flat plateau
+    around the valley, and the kink at its edge inflates the fitted scatter. ``clip=False``: the behavior of
+    the paper and of versions before 1.2.0. The GP carries ``.ceiling`` (None without clipping) and
+    ``.n_clipped``. See ``docs/constants.md``.
+    """
+    y = train["chi2"].values
+    gp = PessimisticGP(X, y, level, space.dim, seed, kernel, level_cap=level_cap)
+    gp.ceiling, gp.n_clipped = None, 0
+    rest = usable.loc[~usable.index.isin(train.index)]
+    if not clip or not len(rest):
+        return gp
+    ceiling = gp.ceiling = float(y.max())
+    Xr = space.to_unit(rest)
+    added = np.zeros(len(rest), bool)
+    for _ in range(n_iter):
+        new = ~added & (gp.predict(Xr) < ceiling)
+        if not new.any():
+            break
+        added |= new
+        gp = PessimisticGP(np.vstack([X, Xr[added]]), np.concatenate([y, np.full(int(added.sum()), ceiling)]),
+                           level, space.dim, seed, kernel, level_cap=level_cap)
+        gp.ceiling, gp.n_clipped = ceiling, int(added.sum())
+    return gp
+
+
 def training_window(X, chi2, dim: int, seed: int, train_window: float | None, kernel: str = "matern52",
                     n_min: int | None = None):
     """The training window of Section 3.4 of the paper: keep the models within ``train_window`` x sigma_chi2 of the

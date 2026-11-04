@@ -1,8 +1,10 @@
 import numpy as np
+import pandas as pd
 from helpers import SPACE, bowl, table
 
 from sagari import PessimisticGP, errorbar_round, gp_profiles, inference_gp, out_of_sample, profile_verdict
 from sagari.errorbars import profile_compact
+from sagari.gp import fit_clipped
 
 
 def test_errorbar_round_predicts_its_models():
@@ -36,6 +38,30 @@ def test_pessimistic_level_cap():
     y = g.gp.y_train_ * g.scale + g.level
     g1 = inference_gp(t, SPACE, 2, level_cap=1.0)[0]
     assert np.isclose(g1.level, min(chi2_min + thr, y.min() + np.ptp(y)))
+
+
+def test_clipped_window():
+    """Models outside the training window that the surrogate predicts below the window top are added back at the
+    top (an NGC 4751 campaign: dropped, three models at chi2_min + 1068-1205 could not stop the GP from putting
+    chi2_min + 3 between them); clip=False, or a fit that agrees with them, leaves the floor as it was."""
+    t = table(200)
+    train = t.nsmallest(40, "chi2")
+    X = SPACE.to_unit(train)
+    base = fit_clipped(X, train, t, SPACE, 40000.0, 1, clip=False)
+    agree = fit_clipped(X, train, t, SPACE, 40000.0, 1)
+    low = SPACE.to_unit(train.nsmallest(10, "chi2"))
+    assert base.ceiling is None and base.n_clipped == 0
+    assert np.abs(agree.predict(low) - base.predict(low)).max() < 3
+    # three bad models next to the floor, which the unclipped fit cannot see
+    bad = train.nsmallest(3, "chi2").copy()
+    bad["a"] = bad["a"] + 0.01
+    bad["chi2"] = 5000.0
+    bad.index = bad.index + 10_000
+    t2 = pd.concat([t, bad])
+    clipped = fit_clipped(X, train, t2, SPACE, 40000.0, 1)
+    assert clipped.n_clipped >= 3 and clipped.ceiling == train["chi2"].max()
+    assert np.all(clipped.predict(SPACE.to_unit(bad)) > base.predict(SPACE.to_unit(bad)) + 50)
+    assert inference_gp(t, SPACE, 2, clip_window=False)[0].ceiling is None
 
 
 def test_profiles_and_verdict():

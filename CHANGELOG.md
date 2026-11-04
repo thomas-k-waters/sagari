@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.2.0 (2026-11-04)
+
+- **Fix: the monitoring and inference surrogates could put a false basin between models far above the minimum.**
+  The training window drops the models more than 30 σ_χ² above the minimum, so the GP never saw the models that
+  rule a region out and could extend the valley into a gap they surround. In an NGC 4751 campaign the surrogate put
+  χ²_min + 3 at M_BH 4.7e8, v_c 200 km/s, 0.05–0.12 (unit cube) from three models measured at χ²_min + 1068–1205.
+  The false basin took monitoring weight (the M_BH range of one round reached 4.7e8), made the stopping rule's M_BH
+  move 4.5 in the next round, and put second minima in the profiles. The surrogate is now fitted as before, and the
+  models outside the training set that it predicts below the training set's top are added at that top and the GP
+  refitted, up to three times (`gp.fit_clipped`). For the same models, 42 of 547 are added, the fitted scatter is
+  14.9 (13.8 before), the length scales are unchanged, no model outside the window is predicted more than 5 σ_χ²
+  below its top (one at +1105 was predicted at +87), and the profiles have a single valley. Adding all the models
+  outside the window, clipped, was rejected: the GP then has to fit a flat plateau around the valley, and the kink
+  at its edge inflates the fitted scatter.
+- `clip_window` is a keyword argument of `smoothed_estimate`, `inference_gp` and `errorbar_round`, and a campaign
+  setting (`estimate.clip_window`, `errorbars.clip_window`, both true). `false` / `False` restores the behavior of
+  the paper and earlier versions. Existing campaigns pick it up when they are next loaded, and their estimate
+  history is recomputed with it. The automatic window (`auto_window=True`) does not clip.
+- New: `sagari.fit_clipped`.
+- Effect on the paper's problems:
+  - M86 v5: 44 models are added. The profile curves move by at most 3 in Δχ² where Δχ² < 20 (median 0.1–1.1;
+    σ_χ² is 10). The Δχ² ≤ 10 ranges change by less than 8% of their width. At Δχ² ≤ 4 the upper end of Υ drops
+    from 8.3 to 7.0, because M86's second solution (Υ ≈ 8.3) sits at Δχ² 4.0 before and 4.1 after.
+  - The two-basin benchmark: BENCHMARK_RESULT
+  - Parity tests pass (the reference, the original campaign code, has the same change). The golden tests now run
+    the GP stages with `clip_window=False`, since the fixture was written by the code of the paper. With clipping
+    the golden table adds 20 of 128 models.
+- New test: `test_clipped_window`.
+- Documentation: the models outside the training window in `docs/constants.md`, and the new settings in
+  `docs/configuration.md`.
+
 ## 1.1.0 (2026-11-03)
 
 - **Fix: the monitoring and inference surrogates could dip far below the minimum away from every model.**

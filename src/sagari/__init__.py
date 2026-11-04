@@ -24,7 +24,7 @@ from ._version import __version__
 from .acquisition import initial_design, propose_round
 from .campaign import DEFAULTS, Campaign, read_results
 from .errorbars import errorbar_round, gp_profiles, inference_gp, out_of_sample, profile_verdict
-from .gp import PessimisticGP, feasibility_gp, fit_gp, training_window
+from .gp import PessimisticGP, feasibility_gp, fit_clipped, fit_gp, training_window
 from .monitor import estimate_converged, estimate_moved, smoothed_estimate, trusted_best_point
 from .sobol import DEFAULT_SEED, SobolGlobalDesign
 from .space import ParameterSpace
@@ -33,6 +33,6 @@ __all__ = [
     "__version__", "ParameterSpace", "SobolGlobalDesign", "DEFAULT_SEED", "Campaign", "DEFAULTS", "read_results",
     "initial_design", "propose_round", "smoothed_estimate", "estimate_moved", "estimate_converged",
     "trusted_best_point", "inference_gp", "errorbar_round", "gp_profiles", "profile_verdict", "out_of_sample",
-    "PessimisticGP", "feasibility_gp", "fit_gp", "training_window",
+    "PessimisticGP", "feasibility_gp", "fit_clipped", "fit_gp", "training_window",
     "gp", "monitor", "errorbars", "posterior", "replay",
 ]

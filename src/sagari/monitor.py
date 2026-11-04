@@ -17,14 +17,15 @@ import pandas as pd
 from scipy.spatial import cKDTree
 from scipy.stats import norm
 
-from .gp import PessimisticGP, feasibility_gp, training_window
+from .gp import feasibility_gp, fit_clipped, training_window
 from .space import as_space
 
 
 def smoothed_estimate(table: pd.DataFrame, space, seed: int = 0, n_train_cap: int = 300,
                       feasible_factor: float = 10.0, n_uniform: int = 60000, temperature: float | None = None,
                       quantiles: tuple = (0.16, 0.84), train_window: float | None = 30.0, kernel: str = "matern52",
-                      feasibility: bool = False, level_cap: float | None = 10.0) -> dict | None:
+                      feasibility: bool = False, level_cap: float | None = 10.0,
+                      clip_window: bool = True) -> dict | None:
     """The monitoring estimate after a round.
 
     Returns ``{param: [best, lo, hi], "chi2_min", "temperature", "ess"}`` in physical units (best: the
@@ -32,7 +33,8 @@ def smoothed_estimate(table: pd.DataFrame, space, seed: int = 0, n_train_cap: in
     Use the ``kernel`` and ``train_window`` of the campaign's sampler. ``feasibility=True`` also multiplies
     the weights by the probability, from the feasibility GP, of lying inside the training window (off in the
     paper). ``level_cap``: the cap on the surrogate's prior level (:class:`sagari.gp.PessimisticGP`; None in
-    the paper).
+    the paper). ``clip_window``: add back, at the top of the training window, the models outside it that the
+    surrogate predicts below it (:func:`sagari.gp.fit_clipped`; False in the paper).
     """
     space = as_space(space)
     finite = table[np.isfinite(table["chi2"])]
@@ -48,7 +50,8 @@ def smoothed_estimate(table: pd.DataFrame, space, seed: int = 0, n_train_cap: in
     keep, win_scatter = training_window(X, best["chi2"].values, dim, seed, train_window, kernel)
     X, best = X[keep], best[keep]
     limit = float(best["chi2"].max() - best["chi2"].min()) if win_scatter is not None else thr
-    gp = PessimisticGP(X, best["chi2"].values, chi2_min + thr, dim, seed, kernel, level_cap=level_cap)
+    gp = fit_clipped(X, best, usable, space, chi2_min + thr, seed, kernel,
+                     clip=clip_window and train_window is not None, level_cap=level_cap)
     T = max(1.0, float(np.sqrt(gp.kernel_.k2.noise_level) * gp.scale)) if temperature is None else temperature
 
     rng = np.random.default_rng([seed, 4242, len(finite)])

@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import qmc
 
-from .gp import PessimisticGP, feasibility_gp, fit_gp, noise_var, training_window
+from .gp import PessimisticGP, feasibility_gp, fit_clipped, fit_gp, noise_var, training_window
 from .sobol import DEFAULT_SEED
 from .space import as_space
 
@@ -25,7 +25,7 @@ WINDOW_FRACTIONS = (1.0, 2 / 3, 0.4, 0.27, 0.17)     # auto-window candidates, a
 # ---------------------------------------------------------------- the inference surrogate
 def inference_gp(table: pd.DataFrame, space, seed: int = DEFAULT_SEED, kernel: str = "matern52",
                  train_window: float | None = 30.0, n_train_cap: int = 1000, feasible_factor: float = 10.0,
-                 auto_window: bool = False, level_cap: float | None = 10.0):
+                 auto_window: bool = False, level_cap: float | None = 10.0, clip_window: bool = True):
     """The surrogate of the error-bar rounds and of the final inference: the monitoring GP (pessimistic prior
     at the feasibility threshold, capped by ``level_cap`` as in :class:`sagari.gp.PessimisticGP`, None in the
     paper; nugget for the scatter) fitted to the models below the threshold and inside the training window, at
@@ -33,7 +33,8 @@ def inference_gp(table: pd.DataFrame, space, seed: int = DEFAULT_SEED, kernel: s
 
     ``auto_window=True`` instead takes the widest window whose fitted scatter matches the leave-one-out rms
     of the models near the floor (:func:`window_check`); the returned GP then carries ``.window`` and
-    ``.window_checks``. Off in the paper (unstable on replayed sets).
+    ``.window_checks``. Off in the paper (unstable on replayed sets). ``clip_window`` as in
+    :func:`sagari.smoothed_estimate` (not applied to the automatic window).
 
     Returns ``(gp, chi2_min, threshold)``, or None with too few finite models.
     """
@@ -55,7 +56,9 @@ def inference_gp(table: pd.DataFrame, space, seed: int = DEFAULT_SEED, kernel: s
     X = space.to_unit(best)
     keep, _ = training_window(X, best["chi2"].values, dim, seed, train_window, kernel)
     X, best = X[keep], best[keep]
-    return PessimisticGP(X, best["chi2"].values, chi2_min + thr, dim, seed, kernel, level_cap=level_cap), chi2_min, thr
+    gp = fit_clipped(X, best, usable, space, chi2_min + thr, seed, kernel,
+                     clip=clip_window and train_window is not None, level_cap=level_cap)
+    return gp, chi2_min, thr
 
 
 def window_check(gp: PessimisticGP, n_floor: int = 150) -> dict:
@@ -219,7 +222,7 @@ def errorbar_round(table: pd.DataFrame, space, n_new: int, seed: int = DEFAULT_S
                    train_window: float | None = 30.0, dchi2: float | None = None, n_candidates: int = 2 ** 15,
                    n_train_cap: int = 1000, n_profile: int = 7, profile_dchi2: float | None = None,
                    profile_levels: tuple = (4.0, 10.0), auto_window: bool = False, round_index: int = 0,
-                   level_cap: float | None = 10.0) -> pd.DataFrame:
+                   level_cap: float | None = 10.0, clip_window: bool = True) -> pd.DataFrame:
     """One error-bar round of ``n_new`` models: ``n_profile`` x dim on the profile paths, the rest filling the
     region within ``dchi2`` (default 10 + 2 sigma_chi2) of the surrogate minimum.
 
@@ -231,12 +234,12 @@ def errorbar_round(table: pd.DataFrame, space, n_new: int, seed: int = DEFAULT_S
     Every model carries the surrogate's prediction (``pred_mu``; ``pred_sd``, the predictive sd including the
     scatter; ``pred_latent``, without it) for :func:`out_of_sample`. ``.attrs["profile_before"]`` holds the
     profiles before the round, for :func:`profile_verdict`. Pass the number of earlier error-bar rounds as
-    ``round_index`` (used only for bookkeeping). ``level_cap`` as in :func:`inference_gp`.
+    ``round_index`` (used only for bookkeeping). ``level_cap`` and ``clip_window`` as in :func:`inference_gp`.
     """
     space = as_space(space)
     dim = space.dim
     fit = inference_gp(table, space, seed, kernel, train_window, n_train_cap, auto_window=auto_window,
-                       level_cap=level_cap)
+                       level_cap=level_cap, clip_window=clip_window)
     if fit is None:
         raise ValueError("too few finite models to fit the surrogate")
     gp = fit[0]

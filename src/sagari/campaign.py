@@ -49,10 +49,11 @@ DEFAULTS = {
     "converge_on": None,            # parameters the stopping rule watches (default: all free)
     "stop": {"frac": 0.2, "patience": 1, "min_rounds": 2, "max_rounds": 20},
     "sampler": {"kernel": "matern52", "train_window": 30.0, "global_fraction": 0.35},
-    # n_train_cap: 300 in the paper (v1.0.0); level_cap: None in the paper (before v1.1.0); see docs/constants.md
-    "estimate": {"n_train_cap": 1000, "level_cap": 10.0},
-    "errorbars": {"n_round": 128, "n_profile": 7, "n_train_cap": 1000, "level_cap": 10.0, "sd_tol": 3.0, "frac": 0.2,
-                  "levels": [4.0, 10.0], "max_rounds": 3, "auto_window": False},
+    # n_train_cap: 300 in the paper (v1.0.0); level_cap: None in the paper (before v1.1.0); clip_window: False in
+    # the paper (before v1.2.0); see docs/constants.md
+    "estimate": {"n_train_cap": 1000, "level_cap": 10.0, "clip_window": True},
+    "errorbars": {"n_round": 128, "n_profile": 7, "n_train_cap": 1000, "level_cap": 10.0, "clip_window": True,
+                  "sd_tol": 3.0, "frac": 0.2, "levels": [4.0, 10.0], "max_rounds": 3, "auto_window": False},
 }
 
 SEARCH, ERRORBAR = "search", "errorbar"
@@ -114,8 +115,9 @@ class Campaign:
         ``converge_on`` (list of parameters; default all free), ``stop`` (``frac`` 0.2, ``patience`` 1,
         ``min_rounds`` 2, ``max_rounds`` 20), ``sampler`` (keyword arguments of
         :func:`sagari.propose_round`), ``estimate`` (``n_train_cap`` 1000, the paper used 300; ``level_cap`` 10,
-        the paper used None), ``errorbars`` (``n_round`` 128, ``n_profile`` 7, ``n_train_cap`` 1000, ``level_cap``
-        10, ``sd_tol`` 3, ``frac`` 0.2, ``levels`` [4, 10], ``max_rounds`` 3, ``auto_window`` False).
+        the paper used None; ``clip_window`` True, the paper used False), ``errorbars`` (``n_round`` 128,
+        ``n_profile`` 7, ``n_train_cap`` 1000, ``level_cap`` 10, ``clip_window`` True, ``sd_tol`` 3, ``frac`` 0.2,
+        ``levels`` [4, 10], ``max_rounds`` 3, ``auto_window`` False).
         """
         d = Path(directory)
         if (d / "campaign.yaml").exists() and not overwrite:
@@ -228,13 +230,15 @@ class Campaign:
         return smoothed_estimate(table, self.space, seed=self.seed, train_window=s["sampler"].get("train_window", 30.0),
                                  kernel=s["sampler"].get("kernel", "matern52"),
                                  n_train_cap=s["estimate"].get("n_train_cap", 1000),
-                                 level_cap=s["estimate"].get("level_cap", 10.0))
+                                 level_cap=s["estimate"].get("level_cap", 10.0),
+                                 clip_window=s["estimate"].get("clip_window", True))
 
     def _inference(self, table):
         e = self.settings["errorbars"]
         return inference_gp(table, self.space, self.seed, self.settings["sampler"].get("kernel", "matern52"),
                             self.settings["sampler"].get("train_window", 30.0), e["n_train_cap"],
-                            auto_window=e.get("auto_window", False), level_cap=e.get("level_cap", 10.0))
+                            auto_window=e.get("auto_window", False), level_cap=e.get("level_cap", 10.0),
+                            clip_window=e.get("clip_window", True))
 
     def status(self, results=None, verbose: bool = True) -> dict:
         """Where the campaign stands: the monitoring estimate after every search round (recomputed for the
@@ -387,7 +391,8 @@ class Campaign:
                                train_window=self.settings["sampler"].get("train_window", 30.0),
                                n_train_cap=e["n_train_cap"], n_profile=e["n_profile"],
                                profile_levels=tuple(e["levels"]), auto_window=e.get("auto_window", False),
-                               round_index=n_eb, level_cap=e.get("level_cap", 10.0))
+                               round_index=n_eb, level_cap=e.get("level_cap", 10.0),
+                               clip_window=e.get("clip_window", True))
             return self._write_round(d, ERRORBAR, {})
         raise ValueError(f"unknown phase {what!r}")
 

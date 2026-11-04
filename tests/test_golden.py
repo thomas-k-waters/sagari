@@ -7,7 +7,8 @@ match exactly. What does is compared with tolerances set by perturbing the fixtu
 and the error-bar round stay put, while the GP's fitted scatter after one round of 128 models can move by a factor
 of 2 (the marginal likelihood is nearly flat between more nugget and shorter length scales, and round-off decides
 which side the optimizer settles on). The exact, same-machine comparison with the original code is
-tests/test_parity.py.
+tests/test_parity.py. The fixture predates clip_window (v1.2.0), so the GP-based stages run with
+clip_window=False, the behavior of the code that wrote it.
 """
 import json
 from pathlib import Path
@@ -60,14 +61,14 @@ def test_refinement_round():
 
 
 def test_estimate():
-    e = sg.smoothed_estimate(_table(), SPACE, seed=G["seed"], kernel="matern52", train_window=30.0)
+    e = sg.smoothed_estimate(_table(), SPACE, seed=G["seed"], kernel="matern52", train_window=30.0, clip_window=False)
     for p in FREE:
         assert np.allclose(e[p], G["estimate"][p], rtol=1e-2)
     assert abs(e["chi2_min"] - G["estimate"]["chi2_min"]) < 0.5
 
 
 def test_errorbar_round():
-    d = sg.errorbar_round(_table(), SPACE, G["n_round"], seed=G["seed"], n_profile=7)
+    d = sg.errorbar_round(_table(), SPACE, G["n_round"], seed=G["seed"], n_profile=7, clip_window=False)
     U, ref = SPACE.to_unit(d), SPACE.to_unit(np.array(G["fill"]))
     assert (d["kind"] == "fill").sum() == G["n_round"] - 7 * SPACE.dim
     same = np.all(np.isclose(U, ref, rtol=0, atol=1e-6), axis=1)
