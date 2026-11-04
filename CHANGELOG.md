@@ -23,7 +23,6 @@
   - M86 v5: 44 models are added. The profile curves move by at most 3 in Δχ² where Δχ² < 20 (median 0.1–1.1;
     σ_χ² is 10). The Δχ² ≤ 10 ranges change by less than 8% of their width. At Δχ² ≤ 4 the upper end of Υ drops
     from 8.3 to 7.0, because M86's second solution (Υ ≈ 8.3) sits at Δχ² 4.0 before and 4.1 after.
-  - The two-basin benchmark: BENCHMARK_RESULT
   - Parity tests pass (the reference, the original campaign code, has the same change). The golden tests now run
     the GP stages with `clip_window=False`, since the fixture was written by the code of the paper. With clipping
     the golden table adds 20 of 128 models.
